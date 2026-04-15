@@ -1,0 +1,6 @@
+flask
+transformers
+torch
+pyttsx3
+emoji
+edge-tts

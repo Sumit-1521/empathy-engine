@@ -144,7 +144,7 @@ def build_analysis(text: str, voice_style: str) -> dict[str, object]:
         final_intensity,
     )
 
-    try:
+try:
     if len(clause_result) > 1:
         expressive_segments = [
             {
@@ -210,7 +210,6 @@ except Exception as e:
         "fallback_path": "output_baseline.mp3",
         "mime_type": "audio/mpeg"
     }
-
     return {
         "text": text,
         "model_emotion": model_result["emotion"],

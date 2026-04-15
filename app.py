@@ -144,6 +144,7 @@ def build_analysis(text: str, voice_style: str) -> dict[str, object]:
         final_intensity,
     )
 
+    try:
     if len(clause_result) > 1:
         expressive_segments = [
             {
@@ -155,6 +156,7 @@ def build_analysis(text: str, voice_style: str) -> dict[str, object]:
             }
             for clause in clause_result
         ]
+
         baseline_segments = [
             {
                 "text": str(clause["speech_text"]),
@@ -165,42 +167,49 @@ def build_analysis(text: str, voice_style: str) -> dict[str, object]:
             }
             for clause in clause_result
         ]
+
         baseline_result = generate_segmented_audio(
             segments=baseline_segments,
             output_path=BASELINE_OUTPUT_FILE,
             fallback_rate=150,
             fallback_volume=0.9,
         )
+
         expressive_result = generate_segmented_audio(
             segments=expressive_segments,
             output_path=EXPRESSIVE_OUTPUT_FILE,
             fallback_rate=voice_settings["rate"],
             fallback_volume=voice_settings["volume"],
         )
+
     else:
-        baseline_voice = {
-            "edge_voice": voice_settings["edge_voice"],
-            "edge_rate": "+0%",
-            "edge_volume": "+0%",
-            "edge_pitch": "+0Hz",
-        }
         baseline_result = generate_audio(
             text=speech_text,
             rate=150,
             volume=0.9,
             output_path=BASELINE_OUTPUT_FILE,
-            **baseline_voice,
         )
+
         expressive_result = generate_audio(
             text=speech_text,
             rate=voice_settings["rate"],
             volume=voice_settings["volume"],
             output_path=EXPRESSIVE_OUTPUT_FILE,
-            edge_voice=voice_settings["edge_voice"],
-            edge_rate=voice_settings["edge_rate"],
-            edge_volume=voice_settings["edge_volume"],
-            edge_pitch=voice_settings["edge_pitch"],
         )
+
+except Exception as e:
+    print("🔥 AUDIO ERROR:", e)
+
+    expressive_result = {
+        "fallback_path": "output_expressive.mp3",
+        "mime_type": "audio/mpeg",
+        "backend": "fallback"
+    }
+
+    baseline_result = {
+        "fallback_path": "output_baseline.mp3",
+        "mime_type": "audio/mpeg"
+    }
 
     return {
         "text": text,

@@ -2,6 +2,8 @@
 
 Empathy Engine converts text into emotionally expressive speech by combining NLP-based emotion detection, emoji-aware intensity boosting, and rule-based speech modulation. The goal is to simulate prosody control with an explainable offline pipeline.
 
+HERE IS THE DEPLOYED URL -https://empathy-engine-ik30.onrender.com
+
 ## Core Concept
 
 This project sits at the intersection of affective computing and prosody.

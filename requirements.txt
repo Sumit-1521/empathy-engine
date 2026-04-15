@@ -4,3 +4,4 @@ torch
 pyttsx3
 emoji
 edge-tts
+gunicorn

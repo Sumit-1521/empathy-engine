@@ -125,8 +125,10 @@ def build_analysis(text: str, voice_style: str) -> dict[str, object]:
             1.8,
         ),
     )
+
     raw_clause_result = analyze_clauses(text, style=voice_style)
     anchor_voice = should_anchor_clause_voice(emoji_result["emotion"], len(raw_clause_result))
+
     clause_result = analyze_clauses(
         text,
         style=voice_style,
@@ -138,79 +140,84 @@ def build_analysis(text: str, voice_style: str) -> dict[str, object]:
         final_intensity,
         style=voice_style,
     )
-    speech_text = " ".join(clause["speech_text"] for clause in clause_result) or prepare_speech_text(
-    text,
-    emoji_result["emotion"],
-    final_intensity,
-)
 
+    speech_text = " ".join(
+        clause["speech_text"] for clause in clause_result
+    ) or prepare_speech_text(
+        text,
+        emoji_result["emotion"],
+        final_intensity,
+    )
 
-try:
-    if len(clause_result) > 1:
-        expressive_segments = [
-            {
-                "text": str(clause["speech_text"]),
-                "voice": str(clause["edge_voice"]),
-                "rate": str(clause["edge_rate"]),
-                "volume": str(clause["edge_volume"]),
-                "pitch": str(clause["edge_pitch"]),
-            }
-            for clause in clause_result
-        ]
+    # 🔥 FIXED: TRY BLOCK INSIDE FUNCTION
+    try:
+        if len(clause_result) > 1:
+            expressive_segments = [
+                {
+                    "text": str(clause["speech_text"]),
+                    "voice": str(clause["edge_voice"]),
+                    "rate": str(clause["edge_rate"]),
+                    "volume": str(clause["edge_volume"]),
+                    "pitch": str(clause["edge_pitch"]),
+                }
+                for clause in clause_result
+            ]
 
-        baseline_segments = [
-            {
-                "text": str(clause["speech_text"]),
-                "voice": str(voice_settings["edge_voice"]),
-                "rate": "+0%",
-                "volume": "+0%",
-                "pitch": "+0Hz",
-            }
-            for clause in clause_result
-        ]
+            baseline_segments = [
+                {
+                    "text": str(clause["speech_text"]),
+                    "voice": str(voice_settings["edge_voice"]),
+                    "rate": "+0%",
+                    "volume": "+0%",
+                    "pitch": "+0Hz",
+                }
+                for clause in clause_result
+            ]
 
-        baseline_result = generate_segmented_audio(
-            segments=baseline_segments,
-            output_path=BASELINE_OUTPUT_FILE,
-            fallback_rate=150,
-            fallback_volume=0.9,
-        )
+            baseline_result = generate_segmented_audio(
+                segments=baseline_segments,
+                output_path=BASELINE_OUTPUT_FILE,
+                fallback_rate=150,
+                fallback_volume=0.9,
+            )
 
-        expressive_result = generate_segmented_audio(
-            segments=expressive_segments,
-            output_path=EXPRESSIVE_OUTPUT_FILE,
-            fallback_rate=voice_settings["rate"],
-            fallback_volume=voice_settings["volume"],
-        )
+            expressive_result = generate_segmented_audio(
+                segments=expressive_segments,
+                output_path=EXPRESSIVE_OUTPUT_FILE,
+                fallback_rate=voice_settings["rate"],
+                fallback_volume=voice_settings["volume"],
+            )
 
-    else:
-        baseline_result = generate_audio(
-            text=speech_text,
-            rate=150,
-            volume=0.9,
-            output_path=BASELINE_OUTPUT_FILE,
-        )
+        else:
+            baseline_result = generate_audio(
+                text=speech_text,
+                rate=150,
+                volume=0.9,
+                output_path=BASELINE_OUTPUT_FILE,
+            )
 
-        expressive_result = generate_audio(
-            text=speech_text,
-            rate=voice_settings["rate"],
-            volume=voice_settings["volume"],
-            output_path=EXPRESSIVE_OUTPUT_FILE,
-        )
+            expressive_result = generate_audio(
+                text=speech_text,
+                rate=voice_settings["rate"],
+                volume=voice_settings["volume"],
+                output_path=EXPRESSIVE_OUTPUT_FILE,
+            )
 
-except Exception as e:
-    print("🔥 AUDIO ERROR:", e)
+    except Exception as e:
+        print("🔥 AUDIO ERROR:", e)
 
-    expressive_result = {
-        "fallback_path": "output_expressive.mp3",
-        "mime_type": "audio/mpeg",
-        "backend": "fallback"
-    }
+        expressive_result = {
+            "fallback_path": "output_expressive.mp3",
+            "mime_type": "audio/mpeg",
+            "backend": "fallback"
+        }
 
-    baseline_result = {
-        "fallback_path": "output_baseline.mp3",
-        "mime_type": "audio/mpeg"
-    }
+        baseline_result = {
+            "fallback_path": "output_baseline.mp3",
+            "mime_type": "audio/mpeg"
+        }
+
+    # ✅ RETURN ALWAYS (VERY IMPORTANT)
     return {
         "text": text,
         "model_emotion": model_result["emotion"],
@@ -229,17 +236,18 @@ except Exception as e:
         "clauses": clause_result,
         "audio_file": expressive_result.get("fallback_path", "output_expressive.mp3"),
         "baseline_audio_file": baseline_result.get("fallback_path", "output_baseline.mp3"),
-        "audio_mime_type": expressive_result["mime_type"],
-        "baseline_audio_mime_type": baseline_result["mime_type"],
-        "tts_backend": expressive_result["backend"],
+        "audio_mime_type": expressive_result.get("mime_type", "audio/mpeg"),
+        "baseline_audio_mime_type": baseline_result.get("mime_type", "audio/mpeg"),
+        "tts_backend": expressive_result.get("backend", "fallback"),
         "voice_style": voice_settings["voice_style"],
         "voice_description": voice_settings["voice_description"],
-        "recommended_voice_style": get_voice_profile(recommend_voice_style(emoji_result["emotion"]))["label"],
+        "recommended_voice_style": get_voice_profile(
+            recommend_voice_style(emoji_result["emotion"])
+        )["label"],
         "intensity_label": intensity_label(final_intensity),
         "intensity_percent": int(round((final_intensity / 1.8) * 100)),
         "voice_anchor_mode": anchor_voice,
     }
-
 
 @app.route("/", methods=["GET"])
 def index():

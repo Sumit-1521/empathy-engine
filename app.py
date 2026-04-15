@@ -139,10 +139,11 @@ def build_analysis(text: str, voice_style: str) -> dict[str, object]:
         style=voice_style,
     )
     speech_text = " ".join(clause["speech_text"] for clause in clause_result) or prepare_speech_text(
-        text,
-        emoji_result["emotion"],
-        final_intensity,
-    )
+    text,
+    emoji_result["emotion"],
+    final_intensity,
+)
+
 
 try:
     if len(clause_result) > 1:
